@@ -1,5 +1,5 @@
 %UI
-%UI
+
 function UI()
    f = uifigure('name','MARS-GCS');
    set(f,'Position',[100 50 1300 800])
@@ -7,37 +7,41 @@ function UI()
    gl = uigridlayout(f,[2,3]);
    gl.RowHeight = {'1x','1x','1x','1x'};
    gl.ColumnWidth = {'1x','1x','1x','1x'};
-
-   p = uipanel(gl,'Title','Path Configuration');
-   p.Layout.Row = [2, 3];  % Span the panel across all rows
    
-   grid2 = uigridlayout(p,[2,3]);
+   config_tab_group = uitabgroup(gl);
+   config_tab_group.Layout.Row = [2 3];
+   config_tab_group.Layout.Column = 1;
+   
+   config_tab_1 = uitab(config_tab_group);
+   config_tab_1.Title = 'Path Configuration';
+   
+   grid2 = uigridlayout(config_tab_1,[2,3]);
    grid2.RowHeight = {22,22,22};
    grid2.ColumnWidth = {'1x'};
    
    im = uiimage(f);
    im.ImageSource = "LOGO.jpg";
-   set(im,'Position',[50 550 250 450])
+   set(im,'Position',[50 545 270 450])
    
    w = uipanel(gl,'Title','State');
    w.Layout.Row = 1;
    w.Layout.Column = 1;
    
 
-   k = uiknob(w,'discrete',"Position",[120 10 70 70]);
+   k = uiknob(w,'discrete',"Position",[113 30 70 70]);
    k.Items = {'IDLE', 'PREP', 'ARMED', 'BYPASS'};
    
-   terminalPanel = uipanel(gl,'Title','Terminal');
-   terminalPanel.Layout.Row = 4;
-   terminalPanel.Layout.Column = 1;
+   terminal_tab_group = uitabgroup(gl);
+   terminal_tab_group.Layout.Row = 4;
+   terminal_tab_group.Layout.Column = 1;
    
-   CMlabel = uilabel(terminalPanel,"Position",[10 150 200 15]);
-   CMlabel.HorizontalAlignment = 'left';
-   CMlabel.Text = 'Command';
-
-   CMfield = uieditfield(terminalPanel, "Position",[10 120 290 23]);
+   terminal_tab_1 = uitab(terminal_tab_group);
+   terminal_tab_1.Title = 'Terminal';
    
-   termnalField = uieditfield(terminalPanel, "Position",[10 10 290 100]);
+   CMfield = uieditfield(terminal_tab_1, "Position",[10 120 290 23]);
+   
+   termnalField = uieditfield(terminal_tab_1, "Position",[10 10 290 100]);
+   pDlabel.Text = 'Swarm Density';
    
    %Path Density
    pDlabel = uilabel(grid2);
@@ -84,11 +88,17 @@ function UI()
                  'FontSize',13,...
                  'WordWrap','on');
              
+   mapGeo = geoaxes(gl);
+   mapGeo.Layout.Row = [1 2];
+   mapGeo.Layout.Column = [3 4];
+   title(mapGeo,'Position Map');
+   latSeattle = 47.62;
+   lonSeattle = -122.33;
+   latAnchorage = 61.20;
+   lonAnchorage = -149.9;
+   geoplot(mapGeo,[returnLatitudeData()],[returnLongitudeData()],'g-*')
+   geobasemap(mapGeo,'streets-dark')
    
-   fx = uiaxes(gl); 
-   fx.Layout.Row = [1 2];
-   fx.Layout.Column = [3 4];
-   title(fx,'Position Map');
    
    pl = uiaxes(gl); 
    pl.Layout.Row = 3;
@@ -114,33 +124,63 @@ function UI()
    missionPanel.Layout.Row = [1 2];
    missionPanel.Layout.Column = 2;
    
-   rwDataPanel = uipanel(gl,'Title','Raw Data');
-   rwDataPanel.Layout.Row = [3 4];
-   rwDataPanel.Layout.Column = 4;
+   tg = uitabgroup(gl);
+   tg.Layout.Row = [3 4];
+   tg.Layout.Column = 4;
    
-   %
-   wingFL = uilabel(rwDataPanel);
-   wingFL.HorizontalAlignment = 'left';
-   wingFL.Text = 'Wing - FL';
-   wingFL.Position = [100 100 100 60];
-   wingFLout = uilabel(rwDataPanel);
-   wingFLout.HorizontalAlignment = 'right';
-   wingFLout.Text = '0';
+   Data1tab = uitab(tg);
+   Data1tab.Title = 'Raw Data';
+   % Define the table data
+   data = cell(12,2);
+   data{1,1} = 'Variable'; % Predefined column name
+   data{1,2} = 'Value'; % Predefined column name
+   
+   for i = 2:14
+       data{i,2} = 0; % Random data in column 2
+   end
 
-   % Create and lay out button
-   %btn = uibutton(gl);
-   %btn.Layout.Row = 2;
-   %btn.Layout.Column = 1;
-   %btn.Text = 'Run Simulation';
-   % Assign button callback function
-   %btn.ButtonPushedFcn = {@plotButtonPushed,currentPosX,currentPosY,xrand,yrand,exploredNodesX,exploredNodesY,promptIX,promptIY,promptFX,promptFY,promptPD,cbx,cbx2,cbx3,cbx4};
-       
-   % Create and lay out button
-   %btn2 = uibutton(gl);
-   %btn2.Layout.Row = 2;
-   %btn2.Layout.Column = 2;
-   %btn2.Text = 'Export Data to File';
-   %btn2.ButtonPushedFcn = {@ExportProcess,xrand,yrand,cbx};
+   %Names
+   data{2,1} = 'Latitude';
+   data{3,1} = 'Longitude';
+   data{4,1} = 'Satellites';
+   data{5,1} = 'Pitch';
+   data{6,1} = 'Roll';
+   data{7,1} = 'Yaw';
+   data{8,1} = 'AngleX';
+   data{9,1} = 'AngleY';
+   data{10,1} = 'AngleZ';
+   data{11,1} = 'motorFL';
+   data{12,1} = 'motorFR';
+   data{13,1} = 'motorRL';
+   data{14,1} = 'motorRR';
+   
+   %Values
+   
+   % Create a uitable with the data
+   t = uitable(Data1tab,'Data',data);
+
+   % Set the column widths
+   t.ColumnWidth = {150, 150};
+
+   % Set the row names
+   t.RowName = [];
+
+   % Set the first row as bold
+   t.FontWeight = 'bold';
+   t.Data{1,1} = 'Variable';
+   t.Data{1,2} = 'Value';
+
+   % Set the table size
+   t.Position = [5 28 302 355];
+   
+   Guagetab = uitab(tg);
+   Guagetab.Title = 'Data Guages';
+   velocityGuagetext = uilabel(Guagetab);
+   velocityGuagetext.HorizontalAlignment = 'left';
+   velocityGuagetext.Text = 'Velocity -';
+   velocityGuagetext.Position = [50 280 100 60];
+   velocityg = uigauge(Guagetab, "Position",[135 200 150 150]);
+   velocityg.Value = 45;
    
    btn3 = uibutton(grid2);
    btn3.Text = 'Update Configuration';
@@ -184,12 +224,47 @@ function UI()
     pitchRate = 1; % pitch rate (degrees per second)
     dt = 0.1; % animation time step
 
-   
+    x = linspace(0, 10, 100);
     % Link the data of Plot 1 and Plot 2
     linkdata on;
     
+    time = 0;
+    bse = 1;
+     % Function to update the plots continuously
+    function updatePlots()
+        %Update Raw
+        data{2,2} = returnLatitudeData();
+        data{3,2} = returnLongitudeData();
+        data{4,2} = returnSatellitesData();
+        data{5,2} = returnPitchData();
+        data{6,2} = returnRollData();
+        data{7,2} = returnYawData();
+        data{8,2} = returnAngleXdata();
+        data{9,2} = returnAngleYData();
+        data{10,2} = returnAngleZData();
+        data{11,2} = returnmotorFLData();
+        data{12,2} = returnmotorFRData();
+        data{13,2} = returnmotorRLData();
+        data{14,2} = returnmotorRRData();
+        
+        % Update the table's data property
+        set(t, 'Data', data);
+
+        y2 = cos(x + now * rand());  % Example update function for Plot 2
+        time = time + bse;
+        test = 0.5 + bse;
+        % Update the data of Plot 1 and Plot 2
+        plot(pl,time,test);
+        plot(gx,time,returnVelocityData());
+        plot(lx,time,returnThrottleData());
+        plot(hx, x, y2);
+        
+        % Update the plots
+        drawnow;
+    end
+
     % Call the updatePlots function continuously
     while true
-        x = updateDataPlots(pl,gx,lx,hx);
+        updatePlots();
     end
 end
