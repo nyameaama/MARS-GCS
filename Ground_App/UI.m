@@ -38,12 +38,15 @@ function UI()
    terminal_tab_1 = uitab(terminal_tab_group);
    terminal_tab_1.Title = 'Terminal';
    
-   CMfield = uieditfield(terminal_tab_1, "Position",[10 120 290 23]);
-   
-   termnalField = uieditfield(terminal_tab_1, "Position",[10 10 290 100]);
+   CMfield = uieditfield(terminal_tab_1, "Position",[10 120 200 23]);
+  
+   terminalField = uieditfield(terminal_tab_1, "Position",[10 10 290 100]);
    newText = ['MARS Terminal initialized - ', datestr(now)];
-   termnalField.Value = newText;
+   terminalField.Value = newText;
    
+   btnTerminal = uibutton(terminal_tab_1,"Position",[215 120 90 23]);
+   btnTerminal.Text = 'Send';
+   btnTerminal.ButtonPushedFcn = @(src, event) terminalParser(src,event,terminalField,CMfield.Value);
    %Path Density
    pDlabel = uilabel(grid2);
    pDlabel.HorizontalAlignment = 'left';
@@ -229,8 +232,14 @@ function UI()
     % Link the data of Plot 1 and Plot 2
     linkdata on;
     
-    time = 0;
+    timeX = 0;
     bse = 1;
+    % Initialize cell arrays
+    xArraysAlt = {};
+    xArraysVel = {};
+    xArraysThr = {};
+    yArrays = {};
+    
      % Function to update the plots continuously
     function updatePlots()
         %Update Raw
@@ -252,14 +261,21 @@ function UI()
         set(t, 'Data', data);
 
         y2 = cos(x + now * rand());  % Example update function for Plot 2
-        time = time + bse;
-        test = 0.5 + bse;
-        % Update the data of Plot 1 and Plot 2
-        plot(pl,time,test);
-        plot(gx,time,returnVelocityData());
-        plot(lx,time,returnThrottleData());
-        plot(hx, x, y2);
+        timeX = timeX + bse;
+       
         
+        % Append new arrays to the cell arrays
+        xArraysAlt = [xArraysAlt, {returnAltitudeData()}];
+        xArraysVel = [xArraysVel, {returnVelocityData()}];
+        xArraysThr = [xArraysThr, {returnThrottleData()}];
+        yArrays = [yArrays, {timeX}];
+  
+        % Update the data of Plot 1 and Plot 2
+        plot(pl,cell2mat(yArrays),cell2mat(xArraysAlt));
+        plot(gx,cell2mat(yArrays),cell2mat(xArraysVel));
+        plot(lx,cell2mat(yArrays),cell2mat(xArraysThr));
+        plot(hx, x, y2);
+
         % Update the plots
         drawnow;
     end
