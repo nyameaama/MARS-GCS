@@ -3,18 +3,20 @@
 
 #include <MCUFRIEND_kbv.h>
 #include <Adafruit_GFX.h>
+#include"Sensors.h"
 
 class DisplayInterface {
   public:
     DisplayInterface();
-
+    void reset();
     void begin();
     void updateDroneStates();
-
+    
   private:
     MCUFRIEND_kbv tft;
 
     void displayDroneState();
+    void displayMenuButton();
     void displayTime();
     void displayVelocity();
     void displayGPS();
@@ -26,5 +28,3 @@ class DisplayInterface {
     void UplinkDownlink();
     String formatMotorPosition(int position);
 };
-
-#endif // DISPLAY_INTERFACE_H

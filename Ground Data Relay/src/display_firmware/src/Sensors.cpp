@@ -10,13 +10,13 @@ uint8_t Sensors::speed() {
   return random(0, 40); // Return a random value between 0 and 39
 }
 
-bool Sensors::checkGPS() {
+float heckGPS() {
   // Add your implementation to check the GPS connection
   // Example implementation:
   return random(0, 2); // Return a random boolean value (0 or 1)
 }
 
-bool Sensors::checkUltrasonics() {
+float Sensors::checkUltrasonics() {
   // Add your implementation to check the ultrasonic sensor connection
   // Example implementation:
   return random(0, 2); // Return a random boolean value (0 or 1)
@@ -56,4 +56,21 @@ uint32_t Sensors::date() {
   // Add your implementation to read and return the date value
   // Example implementation:
   return random(0, 365); // Return a random value between 0 and 364
+}
+
+uint8_t Sensors::ultrasonic_sensors(uint8_t sensorIndex, uint8_t dummyValue) {
+  // Add your implementation to read and return the ultrasonic sensor value
+  // based on the sensor index and dummy value
+  // Example implementation:
+  return random(0, 100); // Return a random value between 0 and 99
+}
+
+float Sensors::pitch(){
+  return random(0, 100); // Return a random value between 0 and 99
+}
+float Sensors::roll(){
+  return random(0, 100); // Return a random value between 0 and 99
+}
+float Sensors::yaw(){
+  return random(0, 100); // Return a random value between 0 and 99
 }

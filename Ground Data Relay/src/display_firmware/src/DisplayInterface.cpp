@@ -27,17 +27,22 @@ void DisplayInterface::begin() {
   tft.fillScreen(0x0000);
 }
 
+void DisplayInterface::reset(){
+    tft.fillScreen(0x0000);
+}
+
 void DisplayInterface::updateDroneStates() {
   displayDroneState();
-  displayTime();
-  displayVelocity();
-  displayGPS();
-  displayMotorPositions();
-  displayPitchRollYaw();
-  displayTitle();
   displayPlatform();
   displayConnectionState();
+  displayTitle();
+  displayTime();
   UplinkDownlink();
+  displayVelocity();
+  displayMotorPositions();
+  displayGPS();
+  displayPitchRollYaw();
+  displayMenuButton();
 }
 
 void DisplayInterface::displayDroneState() {
@@ -47,6 +52,14 @@ void DisplayInterface::displayDroneState() {
   tft.println("ACTIVE");
   tft.drawRect(110, 115, 270, 100,WHITE);
   // Add your code to update the drone state
+}
+
+void DisplayInterface::displayMenuButton(){
+  tft.setTextColor(0xFFFF);
+  tft.setTextSize(3);
+  tft.setCursor(400, 140);
+  tft.println("Menu");
+  tft.drawRect(390, 125, 90, 50,WHITE);
 }
 
 void DisplayInterface::displayConnectionState() {
@@ -94,7 +107,6 @@ void DisplayInterface::UplinkDownlink() {
   // Draw the arrow pointing down
   tft.fillTriangle(ARROWB_X, ARROWB_Y + ARROW_SIZE, ARROWB_X - ARROW_SIZE, ARROWB_Y, ARROWB_X + ARROW_SIZE, ARROWB_Y, 0xFFFF);
   // Add your code to update the time
-   //tft.drawRect(110, 115, 270, 100,WHITE);
 }
 
 void DisplayInterface::displayTitle() {
@@ -116,7 +128,7 @@ void DisplayInterface::displayPlatform() {
 void DisplayInterface::displayVelocity() {
   tft.setTextColor(0xFFFF);
   tft.setTextSize(2);
-  tft.setCursor(330, 290);
+  tft.setCursor(300, 290);
   tft.println("Velocity:");
   // Add your code to update the velocity
 }
@@ -124,12 +136,17 @@ void DisplayInterface::displayVelocity() {
 void DisplayInterface::displayGPS() {
   tft.setTextColor(0xFFFF);
   tft.setTextSize(2);
-  tft.setCursor(330, 230);
-  tft.println("Latitude:"+ String(90));
-  tft.setCursor(330, 250);
-  tft.println("Longitude:"+ String(90));
-  tft.setCursor(330, 270);
-  tft.println("Altitude:"+ String(90));
+  tft.setCursor(300, 230);
+  Sensors *obj = new Sensors();
+  float val = obj -> latitude();
+  float val2 = obj -> longitude();
+  float val3 = obj -> altitude();
+  tft.println("Latitude:"+ String(val));
+  tft.setCursor(300, 250);
+  tft.println("Longitude:"+ String(val2));
+  tft.setCursor(300, 270);
+  tft.println("Altitude:"+ String(val3));
+  delete obj;
   // Add your code to update the GPS latitude and longitude
 }
 
@@ -154,13 +171,17 @@ void DisplayInterface::displayMotorPositions() {
 void DisplayInterface::displayPitchRollYaw() {
   tft.setTextColor(0xFFFF);
   tft.setTextSize(2);
-  tft.setCursor(180, 230);
-  tft.println("Pitch:"+ String(90));
-  tft.setCursor(180, 250);
-  tft.println("Roll:"+ String(90));
-  tft.setCursor(180, 270);
-  tft.println("Yaw:"+ String(90));
-  // Add your code to update the pitch, roll, and yaw
+  tft.setCursor(150, 230);
+  Sensors *obj = new Sensors();
+  float val1 = obj -> pitch();
+  float val2 = obj -> roll();
+  float val3 = obj -> yaw();
+  tft.println("Pitch:"+ String(val1));
+  tft.setCursor(150, 250);
+  tft.println("Roll:"+ String(val2));
+  tft.setCursor(150, 270);
+  tft.println("Yaw:"+ String(val3));
+  delete obj;
 }
 
 String DisplayInterface::formatMotorPosition(int position) {
