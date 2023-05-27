@@ -1,4 +1,5 @@
 #include "DisplayInterface.h"
+#define PAGE 1
 
 #define LCD_CS A3
 #define LCD_CD A2
@@ -18,8 +19,61 @@
 
 const uint16_t BLACK       = 0x0000;
 const uint16_t WHITE       = 0xFFFF;
+// MCUFRIEND UNO shield shares pins with the TFT.
+#if defined(ESP32)
+int XP = 27, YP = 4, XM = 15, YM = 14;  //most common configuration
+#else
+//int XP = 6, YP = A1, XM = A2, YM = 7;  //most common configuration
+int XP = 7, YP = A2, XM = A1, YM = 6;  //next common configuration
+//int XP=PB7,XM=PA6,YP=PA7,YM=PB6; //BLUEPILL must have Analog for YP, XM
+#endif
+#if USE_LOCAL_KBV
+#include "TouchScreen_kbv.h"         //my hacked version
+#define TouchScreen TouchScreen_kbv
+#define TSPoint     TSPoint_kbv
+#else
+#include <TouchScreen.h>         //Adafruit Library
+#endif
+TouchScreen ts(XP, YP, XM, YM, 300);   //re-initialised after diagnose
+TSPoint tp;                            //global point
+
 
 DisplayInterface::DisplayInterface() : tft(LCD_CS, LCD_CD, LCD_WR, LCD_RD, LCD_RESET) {}
+
+void DisplayInterface::readResistiveTouch(void){
+    tp = ts.getPoint();
+    pinMode(YP, OUTPUT);      //restore shared pins
+    pinMode(XM, OUTPUT);
+    //digitalWrite(YP, HIGH);  //because TFT control pins
+    //digitalWrite(XM, HIGH);
+    //    Serial.println("tp.x=" + String(tp.x) + ", tp.y=" + String(tp.y) + ", tp.z =" + String(tp.z));
+}
+
+bool DisplayInterface::isTouchInArea(int touchX, int touchY,int areaX,int areaY,int areaWidth,int areaHeight) {
+  if (touchX >= areaX && touchX <= areaX + areaWidth &&
+      touchY >= areaY && touchY <= areaY + areaHeight) {
+    return true;
+  }
+  return false;
+}
+
+bool DisplayInterface::ISPRESSED(void)
+{
+    // .kbv this was too sensitive !!
+    // now touch has to be stable for 50ms
+    int count = 0;
+    bool state, oldstate;
+    while (count < 10) {
+        readResistiveTouch();
+        state = tp.z > 200;     //ADJUST THIS VALUE TO SUIT YOUR SCREEN e.g. 20 ... 250
+        if (state == oldstate) count++;
+        else count = 0;
+        oldstate = state;
+        delay(5);
+    }
+    return oldstate;
+}
+
 
 void DisplayInterface::begin() {
   tft.begin(0x9486);
@@ -29,6 +83,36 @@ void DisplayInterface::begin() {
 
 void DisplayInterface::reset(){
     tft.fillScreen(0x0000);
+}
+
+void DisplayInterface::state(){
+  //updateDroneStates();
+  //updateBypassPage();
+  displayInnerMenuMotorFL();
+  // Read the touch coordinates
+  if(ISPRESSED() == true){
+    Serial.println("Pressed");
+  }else{
+    //Serial.println("No Press");
+  }
+  Serial.print("tp.x=");
+Serial.print(tp.x);
+Serial.print(", tp.y=");
+Serial.print(tp.y);
+Serial.print(", tp.z=");
+Serial.println(tp.z);
+    readResistiveTouch();
+    // Check if the touch point is within the specified area
+    if (isTouchInArea(tp.x, tp.y,390, 125, 90, 50)) {
+      Serial.println("Pressed");
+      // Touch is detected in the specific area
+      // Perform the desired actions
+      // ...
+      #undef PAGE
+      #define PAGE 2
+      updateBypassPage();
+    }
+
 }
 
 void DisplayInterface::updateDroneStates() {
@@ -43,6 +127,14 @@ void DisplayInterface::updateDroneStates() {
   displayGPS();
   displayPitchRollYaw();
   displayMenuButton();
+}
+
+void DisplayInterface::updateBypassPage(){
+   displayMenuMotorFL();
+   displayMenuMotorFR();
+   displayMenuMotorRR();
+   displayMenuMotorRL();
+   displayMenuThrottle();
 }
 
 void DisplayInterface::displayDroneState() {
@@ -191,3 +283,174 @@ String DisplayInterface::formatMotorPosition(int position) {
   }
   return formattedPosition;
 }
+
+void DisplayInterface::displayMenuMotorFL() {
+  tft.setTextColor(0xFFFF);
+  tft.setTextSize(3);
+  tft.setCursor(30, 25);
+  tft.println("Set Motor FL          ->");
+  tft.drawRect(10, 10, 460, 50,WHITE);
+}
+
+void DisplayInterface::displayMenuMotorFR() {
+  tft.setTextColor(0xFFFF);
+  tft.setTextSize(3);
+  tft.setCursor(30, 85);
+  tft.println("Set Motor FR          ->");
+  tft.drawRect(10, 70, 460, 50,WHITE);
+}
+
+void DisplayInterface::displayMenuMotorRL() {
+  tft.setTextColor(0xFFFF);
+  tft.setTextSize(3);
+  tft.setCursor(30, 145);
+  tft.println("Set Motor RL          ->");
+  tft.drawRect(10, 130, 460, 50,WHITE);
+}
+
+void DisplayInterface::displayMenuMotorRR() {
+  tft.setTextColor(0xFFFF);
+  tft.setTextSize(3);
+  tft.setCursor(30, 205);
+  tft.println("Set Motor RR          ->");
+  tft.drawRect(10, 190, 460, 50,WHITE);
+}
+
+void DisplayInterface::displayMenuThrottle() {
+  tft.setTextColor(0xFFFF);
+  tft.setTextSize(3);
+  tft.setCursor(30, 265);
+  tft.println("Set Throttle Speed    ->");
+  tft.drawRect(10, 250, 460, 50,WHITE);
+}
+
+void DisplayInterface::displayInnerMenuMotorFL(){
+  tft.setTextColor(0xFFFF);
+  tft.setTextSize(4);
+  tft.setCursor(20, 20);
+  tft.println("<");
+  tft.drawRect(10, 10, 50, 50,WHITE);
+  
+  tft.setTextColor(0xFFFF);
+  tft.setTextSize(4);
+  tft.setCursor(80, 110);
+  tft.println("Move Position");
+  
+  tft.setCursor(180, 160);
+  tft.println("+");
+
+  tft.setCursor(230, 160);
+  tft.println("25");
+
+  tft.setCursor(50, 260);
+  tft.println("-");
+  tft.drawRect(35, 250, 50, 50,WHITE);
+  tft.setCursor(420, 260);
+  tft.println("+");
+  tft.drawRect(405, 250, 50, 50,WHITE);
+}
+
+void DisplayInterface::displayInnerMenuMotorFR(){
+  tft.setTextColor(0xFFFF);
+  tft.setTextSize(4);
+  tft.setCursor(20, 20);
+  tft.println("<");
+  tft.drawRect(10, 10, 50, 50,WHITE);
+  
+  tft.setTextColor(0xFFFF);
+  tft.setTextSize(4);
+  tft.setCursor(80, 110);
+  tft.println("Move Position");
+  
+  tft.setCursor(180, 160);
+  tft.println("+");
+
+  tft.setCursor(230, 160);
+  tft.println("25");
+
+  tft.setCursor(50, 260);
+  tft.println("-");
+  tft.drawRect(35, 250, 50, 50,WHITE);
+  tft.setCursor(420, 260);
+  tft.println("+");
+  tft.drawRect(405, 250, 50, 50,WHITE);
+}
+
+void DisplayInterface::displayInnerMenuMotorRR(){
+  tft.setTextColor(0xFFFF);
+  tft.setTextSize(4);
+  tft.setCursor(20, 20);
+  tft.println("<");
+  tft.drawRect(10, 10, 50, 50,WHITE);
+  
+  tft.setTextColor(0xFFFF);
+  tft.setTextSize(4);
+  tft.setCursor(80, 110);
+  tft.println("Move Position");
+  
+  tft.setCursor(180, 160);
+  tft.println("+");
+
+  tft.setCursor(230, 160);
+  tft.println("25");
+
+  tft.setCursor(50, 260);
+  tft.println("-");
+  tft.drawRect(35, 250, 50, 50,WHITE);
+  tft.setCursor(420, 260);
+  tft.println("+");
+  tft.drawRect(405, 250, 50, 50,WHITE);
+}
+
+void DisplayInterface::displayInnerMenuMotorRL(){
+  tft.setTextColor(0xFFFF);
+  tft.setTextSize(4);
+  tft.setCursor(20, 20);
+  tft.println("<");
+  tft.drawRect(10, 10, 50, 50,WHITE);
+  
+  tft.setTextColor(0xFFFF);
+  tft.setTextSize(4);
+  tft.setCursor(80, 110);
+  tft.println("Move Position");
+  
+  tft.setCursor(180, 160);
+  tft.println("+");
+
+  tft.setCursor(230, 160);
+  tft.println("25");
+
+  tft.setCursor(50, 260);
+  tft.println("-");
+  tft.drawRect(35, 250, 50, 50,WHITE);
+  tft.setCursor(420, 260);
+  tft.println("+");
+  tft.drawRect(405, 250, 50, 50,WHITE);
+}
+
+void DisplayInterface::displayInnerMenuThrottle(){
+  tft.setTextColor(0xFFFF);
+  tft.setTextSize(4);
+  tft.setCursor(20, 20);
+  tft.println("<");
+  tft.drawRect(10, 10, 50, 50,WHITE);
+  
+  tft.setTextColor(0xFFFF);
+  tft.setTextSize(4);
+  tft.setCursor(80, 110);
+  tft.println("Move Position");
+  
+  tft.setCursor(180, 160);
+  tft.println("+");
+
+  tft.setCursor(230, 160);
+  tft.println("25");
+
+  tft.setCursor(50, 260);
+  tft.println("-");
+  tft.drawRect(35, 250, 50, 50,WHITE);
+  tft.setCursor(420, 260);
+  tft.println("+");
+  tft.drawRect(405, 250, 50, 50,WHITE);
+}
+

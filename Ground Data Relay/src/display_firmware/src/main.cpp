@@ -3,12 +3,14 @@
 
 DisplayInterface display;
 
-void setup() { 
+void setup() {
+  Serial.begin(9600); 
   display.begin();
 }
 
 void loop() {
   display.reset();
-  display.updateDroneStates();
+  display.state();
+  //display.displayInnerMenuMotorFL();
   delay(1000);
 }
