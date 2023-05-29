@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include "DisplayInterface.h"
 
+uint8_t PAGE = 1;
+
 DisplayInterface display;
 
 void setup() {
@@ -10,7 +12,7 @@ void setup() {
 
 void loop() {
   display.reset();
-  display.state();
-  //display.displayInnerMenuMotorFL();
+  int newState = display.state(PAGE);
+  PAGE = newState;
   delay(1000);
 }

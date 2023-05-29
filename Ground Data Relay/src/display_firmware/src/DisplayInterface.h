@@ -8,7 +8,7 @@
 class DisplayInterface {
   public:
     DisplayInterface();
-    void state();
+    int state(uint8_t PAGE);
     void reset();
     void begin();
     bool isTouchInArea(int touchX, int touchY,int areaX,int areaY,int areaWidth,int areaHeight);
@@ -21,12 +21,13 @@ class DisplayInterface {
     void displayInnerMenuMotorRR();
     void displayInnerMenuMotorRL();
     void displayInnerMenuThrottle();
-    
+    void displayMenuBackL1();
+  
   private:
     MCUFRIEND_kbv tft;
 
     void displayDroneState();
-    void displayMenuButton();
+    void displayMenuButton(int color,int colorBg);
     void displayTime();
     void displayVelocity();
     void displayGPS();

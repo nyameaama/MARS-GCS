@@ -1,5 +1,4 @@
 #include "DisplayInterface.h"
-#define PAGE 1
 
 #define LCD_CS A3
 #define LCD_CD A2
@@ -19,14 +18,13 @@
 
 const uint16_t BLACK       = 0x0000;
 const uint16_t WHITE       = 0xFFFF;
-// MCUFRIEND UNO shield shares pins with the TFT.
-#if defined(ESP32)
-int XP = 27, YP = 4, XM = 15, YM = 14;  //most common configuration
-#else
-//int XP = 6, YP = A1, XM = A2, YM = 7;  //most common configuration
-int XP = 7, YP = A2, XM = A1, YM = 6;  //next common configuration
-//int XP=PB7,XM=PA6,YP=PA7,YM=PB6; //BLUEPILL must have Analog for YP, XM
-#endif
+#define WHITE 0xFFFF
+#define RED   0xF800
+#define BLUE  0x001F
+#define GREEN 0x07E0
+#define BLACK 0x0000
+
+
 #if USE_LOCAL_KBV
 #include "TouchScreen_kbv.h"         //my hacked version
 #define TouchScreen TouchScreen_kbv
@@ -34,6 +32,9 @@ int XP = 7, YP = A2, XM = A1, YM = 6;  //next common configuration
 #else
 #include <TouchScreen.h>         //Adafruit Library
 #endif
+
+int XP = 9, YP = A2, XM = A3, YM =8;
+
 TouchScreen ts(XP, YP, XM, YM, 300);   //re-initialised after diagnose
 TSPoint tp;                            //global point
 
@@ -48,10 +49,12 @@ void DisplayInterface::readResistiveTouch(void){
     //digitalWrite(XM, HIGH);
     //    Serial.println("tp.x=" + String(tp.x) + ", tp.y=" + String(tp.y) + ", tp.z =" + String(tp.z));
 }
-
 bool DisplayInterface::isTouchInArea(int touchX, int touchY,int areaX,int areaY,int areaWidth,int areaHeight) {
   if (touchX >= areaX && touchX <= areaX + areaWidth &&
       touchY >= areaY && touchY <= areaY + areaHeight) {
+    return true;
+  }
+   if ((touchX >= areaX && touchX <= areaX + areaWidth) || (touchY >= areaY && touchY <= areaY + areaHeight)) {
     return true;
   }
   return false;
@@ -69,7 +72,7 @@ bool DisplayInterface::ISPRESSED(void)
         if (state == oldstate) count++;
         else count = 0;
         oldstate = state;
-        delay(5);
+        delay(10);
     }
     return oldstate;
 }
@@ -84,11 +87,7 @@ void DisplayInterface::begin() {
 void DisplayInterface::reset(){
     tft.fillScreen(0x0000);
 }
-
-void DisplayInterface::state(){
-  //updateDroneStates();
-  //updateBypassPage();
-  displayInnerMenuMotorFL();
+int DisplayInterface::state(uint8_t PAGE){
   // Read the touch coordinates
   if(ISPRESSED() == true){
     Serial.println("Pressed");
@@ -96,23 +95,65 @@ void DisplayInterface::state(){
     //Serial.println("No Press");
   }
   Serial.print("tp.x=");
-Serial.print(tp.x);
-Serial.print(", tp.y=");
-Serial.print(tp.y);
-Serial.print(", tp.z=");
-Serial.println(tp.z);
-    readResistiveTouch();
-    // Check if the touch point is within the specified area
-    if (isTouchInArea(tp.x, tp.y,390, 125, 90, 50)) {
-      Serial.println("Pressed");
-      // Touch is detected in the specific area
-      // Perform the desired actions
-      // ...
-      #undef PAGE
-      #define PAGE 2
+  Serial.print(tp.x);
+  Serial.print(", tp.y=");
+  Serial.print(tp.y);
+  
+   Serial.println(PAGE);
+    //readResistiveTouch();
+    if(PAGE == 1){
+      updateDroneStates();
+      //Serial.println("Pressed In Menu");
+      // Check if the touch point is within the specified area
+      if (isTouchInArea(tp.x, tp.y,500, 100, 100, 400)) {
+        Serial.println("Pressed 1");
+        displayMenuButton(WHITE,BLACK);
+        // Touch is detected in the specific area
+        // Perform the desired actions
+        // ...
+        return 2;
+      }
+    }else if(PAGE == 2){
       updateBypassPage();
+      //Serial.println("Pressed Bypass");
+      // Check if the touch point is within the specified area
+      //Back Button
+      if (isTouchInArea(tp.x, tp.y,10,0, 100, 400)) {
+        
+        return 1;
+      }
+      //MotorFL
+      if (isTouchInArea(tp.x, tp.y,100,100, 50, 50)) {
+        
+        // ...
+        //updateBypassPage();
+      }
     }
-
+    /*if(PAGE == 3){
+      // Check if the touch point is within the specified area
+      if (isTouchInArea(tp.x, tp.y,450, 800, 150, 100)) {
+        Serial.println("Pressed In Menu");
+        // Touch is detected in the specific area
+        // Perform the desired actions
+        // ...
+        #undef PAGE
+        #define PAGE 3
+        
+      }
+    }
+    if(PAGE == 4){
+      // Check if the touch point is within the specified area
+      if (isTouchInArea(tp.x, tp.y,450, 800, 150, 100)) {
+        Serial.println("Pressed In Menu");
+        // Touch is detected in the specific area
+        // Perform the desired actions
+        // ...
+        #undef PAGE
+        #define PAGE 4
+        
+      }
+    }*/
+    return PAGE;
 }
 
 void DisplayInterface::updateDroneStates() {
@@ -126,7 +167,7 @@ void DisplayInterface::updateDroneStates() {
   displayMotorPositions();
   displayGPS();
   displayPitchRollYaw();
-  displayMenuButton();
+  displayMenuButton(WHITE,BLACK);
 }
 
 void DisplayInterface::updateBypassPage(){
@@ -135,6 +176,7 @@ void DisplayInterface::updateBypassPage(){
    displayMenuMotorRR();
    displayMenuMotorRL();
    displayMenuThrottle();
+   displayMenuBackL1();
 }
 
 void DisplayInterface::displayDroneState() {
@@ -146,7 +188,7 @@ void DisplayInterface::displayDroneState() {
   // Add your code to update the drone state
 }
 
-void DisplayInterface::displayMenuButton(){
+void DisplayInterface::displayMenuButton(int color,int colorBg){
   tft.setTextColor(0xFFFF);
   tft.setTextSize(3);
   tft.setCursor(400, 140);
@@ -287,41 +329,49 @@ String DisplayInterface::formatMotorPosition(int position) {
 void DisplayInterface::displayMenuMotorFL() {
   tft.setTextColor(0xFFFF);
   tft.setTextSize(3);
-  tft.setCursor(30, 25);
-  tft.println("Set Motor FL          ->");
-  tft.drawRect(10, 10, 460, 50,WHITE);
+  tft.setCursor(130, 25);
+  tft.println("Set Motor FL    ->");
+  tft.drawRect(110, 10, 360, 50,WHITE);
 }
 
 void DisplayInterface::displayMenuMotorFR() {
   tft.setTextColor(0xFFFF);
   tft.setTextSize(3);
-  tft.setCursor(30, 85);
-  tft.println("Set Motor FR          ->");
-  tft.drawRect(10, 70, 460, 50,WHITE);
+  tft.setCursor(130, 85);
+  tft.println("Set Motor FR    ->");
+  tft.drawRect(110, 70, 360, 50,WHITE);
 }
 
 void DisplayInterface::displayMenuMotorRL() {
   tft.setTextColor(0xFFFF);
   tft.setTextSize(3);
-  tft.setCursor(30, 145);
-  tft.println("Set Motor RL          ->");
-  tft.drawRect(10, 130, 460, 50,WHITE);
+  tft.setCursor(130, 145);
+  tft.println("Set Motor RL    ->");
+  tft.drawRect(110, 130, 360, 50,WHITE);
 }
 
 void DisplayInterface::displayMenuMotorRR() {
   tft.setTextColor(0xFFFF);
   tft.setTextSize(3);
-  tft.setCursor(30, 205);
-  tft.println("Set Motor RR          ->");
-  tft.drawRect(10, 190, 460, 50,WHITE);
+  tft.setCursor(130, 205);
+  tft.println("Set Motor RR    ->");
+  tft.drawRect(110, 190, 360, 50,WHITE);
 }
 
 void DisplayInterface::displayMenuThrottle() {
   tft.setTextColor(0xFFFF);
   tft.setTextSize(3);
-  tft.setCursor(30, 265);
-  tft.println("Set Throttle Speed    ->");
-  tft.drawRect(10, 250, 460, 50,WHITE);
+  tft.setCursor(130, 265);
+  tft.println("Set Throttle    ->");
+  tft.drawRect(110, 250, 360, 50,WHITE);
+}
+
+void DisplayInterface::displayMenuBackL1() {
+  tft.setTextColor(0xFFFF);
+  tft.setTextSize(3);
+  tft.setCursor(35, 150);
+  tft.println("<-");
+  tft.drawRect(10, 10, 90, 290,WHITE);
 }
 
 void DisplayInterface::displayInnerMenuMotorFL(){
@@ -453,4 +503,3 @@ void DisplayInterface::displayInnerMenuThrottle(){
   tft.println("+");
   tft.drawRect(405, 250, 50, 50,WHITE);
 }
-
