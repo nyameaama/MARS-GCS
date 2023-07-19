@@ -194,7 +194,7 @@
         <script src="https://cdn.jsdelivr.net/npm/leaflet@1.7.1/dist/leaflet.js"></script>
         <!-- Include Leaflet CSS -->
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.7.1/dist/leaflet.css" />
-
+        <script src="https://unpkg.com/three@0.138.0/build/three.module.js"></script>
       </head>
             
       <body>
@@ -211,7 +211,7 @@
         </div>
         
         <div id = "attitude-ind-area">
-
+          <canvas id="drawingCanvas"></canvas>
         </div>
 
         <div id = "map-ind-area">
@@ -448,6 +448,8 @@
 
           // Call the function to display the waypoints and trace
           displayWaypointsAndTrace();
+
+
       </script>
       </body>
     </html>
